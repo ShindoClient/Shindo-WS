@@ -1,20 +1,14 @@
-# dependencies
 node_modules
 .pnpm-store
-# build
 dist
-# vcs
 .git
 .gitignore
-# env
 .env
 .env.local
-# logs
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-# editor
 .vscode
 .idea
 .DS_Store
