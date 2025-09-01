@@ -3,8 +3,9 @@ services:
     name: shindo-ws
     env: node
     plan: free
-    buildCommand: "npm install && npm run build"
-    startCommand: "node dist/index.js"
+    buildCommand: "curl -fsSL https://get.pnpm.io/install.sh | sh - && pnpm install && pnpm build"
+    startCommand: "pnpm start"
+
     autoDeploy: true
     envVars:
       - key: PORT
