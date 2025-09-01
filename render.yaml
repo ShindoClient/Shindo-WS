@@ -1,10 +1,13 @@
 services:
   - type: web
-    name: shindo-ws-gateway
+    name: shindo-ws
     env: node
     plan: free
-    buildCommand: "npm install"
-    startCommand: "node index.js"
+    buildCommand: "npm install && npm run build"
+    startCommand: "node dist/index.js"
+    autoDeploy: true
     envVars:
       - key: PORT
         value: 8080
+      - key: WS_PATH
+        value: /websocket
