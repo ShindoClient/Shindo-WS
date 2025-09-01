@@ -3,7 +3,7 @@
   
   # Shindo WebSocket
   
-  > Servidor WebSocket para o ShindoClient
+  **Servidor WebSocket para o ShindoClient**
 
  [![Discord](https://img.shields.io/badge/Join%20our%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://shindoclient.com/discord)
  [![License](https://img.shields.io/github/license/ShindoClient/Shindo-WS?style=for-the-badge)](https://github.com/ShindoClient/Shindo-WS/blob/master/LICENSE)
