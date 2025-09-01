@@ -40,6 +40,15 @@ export function createGateway(): Gateway {
     const wss = new WebSocketServer({ server, path: config.wsPath });
     const connections = new Map<WebSocket, ConnectionState>();
 
+    // Health check endpoint
+    app.get("/v1/health", (req, res) => {
+        return res.json({
+            ok: true,
+            startedAt: new Date(Date.now() - process.uptime() * 1000).toISOString(),
+            uptimeMs: Math.floor(process.uptime() * 1000)
+        });
+    });
+
     // Admin endpoints
     app.get("/v1/connected-users", (req, res) => {
         const users = Array.from(connections.values()).map(v => ({
