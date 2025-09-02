@@ -1,15 +1,29 @@
 import { firestore, admin } from "./firebase.js";
 import type { AccountType } from "./types.js";
 
-export async function markOnline(uuid: string, name: string, roles: string[], accountType: AccountType) {
+// presence.ts
+export async function markOnline(
+    uuid: string,
+    name: string,
+    roles: string[] | undefined,     // <- agora pode ser undefined
+    accountType: AccountType
+) {
     const db = firestore();
     if (!db) return;
-    await db.collection("users").doc(uuid).set({
-        name, roles, accountType,
+
+    const data: any = {
+        name,
+        accountType,
         online: true,
         lastJoin: admin.firestore.FieldValue.serverTimestamp(),
         lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    };
+
+    if (Array.isArray(roles) && roles.length) {
+        data.roles = roles;             // <- só seta se veio definido
+    }
+
+    await db.collection("users").doc(uuid).set(data, { merge: true });
 }
 
 export async function updateLastSeen(uuid: string) {

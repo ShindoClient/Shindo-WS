@@ -83,16 +83,59 @@ export function createGateway(): Gateway {
                     case "auth": {
                         const uuid = msg.uuid || uuidv4();
                         const name = msg.name || "Unknown";
-                        const rolesRaw = Array.isArray(msg.roles) ? msg.roles.map(s => String(s).toUpperCase()) : [];
-                        const roles = rolesRaw.length ? rolesRaw : ["MEMBER"];
+                        const clientRoles = normalizeRoles(msg.roles);
                         const accountType = normalizeAccountType(msg.accountType);
 
-                        connections.set(ws, { uuid, name, roles, accountType, lastSeen: Date.now(), isAlive: true });
-                        await markOnline(uuid, name, roles, accountType);
+                        // 1) tenta ler as roles atuais da DB
+                        let rolesFromDb: string[] | undefined = undefined;
+                        try {
+                            const db = firestore();
+                            if (db) {
+                                const snap = await db.collection("users").doc(uuid).get();
+                                if (snap.exists) {
+                                    const data = snap.data() as any;
+                                    if (Array.isArray(data?.roles)) {
+                                        const norm = normalizeRoles(data.roles);
+                                        if (norm.length) rolesFromDb = norm;
+                                    }
+                                }
+                            }
+                        } catch { /* ignore */ }
+
+                        // 2) decide quais roles usar para presença
+                        //    - se a DB tem, usa a DB (FONTE DA VERDADE);
+                        //    - senão, usa as do client se houver;
+                        //    - senão, MEMBER.
+                        let effectiveRoles: string[] = [];
+                        if (rolesFromDb && rolesFromDb.length) {
+                            effectiveRoles = rolesFromDb;
+                        } else if (clientRoles.length) {
+                            effectiveRoles = clientRoles;
+                        } else {
+                            effectiveRoles = ["MEMBER"];
+                        }
+
+                        // 3) guarda o estado na RAM do gateway (sempre com effectiveRoles)
+                        connections.set(ws, {
+                            uuid,
+                            name,
+                            roles: effectiveRoles,
+                            accountType,
+                            lastSeen: Date.now(),
+                            isAlive: true
+                        });
+
+                        // 4) ao marcar online, só passa roles se for:
+                        //    - primeiro cadastro (sem roles na DB), ou
+                        //    - você realmente quer sobrescrever (aqui, NÃO sobrescrevemos se DB já tinha)
+                        const rolesToPersist = (rolesFromDb && rolesFromDb.length)
+                            ? undefined                 // DB já tem: NÃO sobrescreve
+                            : effectiveRoles;           // DB não tinha: grava primeira vez
+
+                        await markOnline(uuid, name, rolesToPersist, accountType);
 
                         send(ws, { type: "auth.ok", uuid });
                         broadcast(wss, { type: "user.join", uuid, name, accountType });
-                        break;
                     }
                     case "ping": {
                         const state = connections.get(ws);
