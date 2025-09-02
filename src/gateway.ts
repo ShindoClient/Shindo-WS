@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { v4 as uuidv4 } from "uuid";
 import { config } from "./config.js";
 import { log } from "./logger.js";
+import { firestore } from "./firebase.js";
 import { ClientToServer, ConnectionState, AccountType } from "./types.js";
 import { markOnline, updateLastSeen, markOffline } from "./presence.js";
 
@@ -82,7 +83,8 @@ export function createGateway(): Gateway {
                     case "auth": {
                         const uuid = msg.uuid || uuidv4();
                         const name = msg.name || "Unknown";
-                        const roles = normalizeRoles(msg.roles);
+                        const rolesRaw = Array.isArray(msg.roles) ? msg.roles.map(s => String(s).toUpperCase()) : [];
+                        const roles = rolesRaw.length ? rolesRaw : ["MEMBER"];
                         const accountType = normalizeAccountType(msg.accountType);
 
                         connections.set(ws, { uuid, name, roles, accountType, lastSeen: Date.now(), isAlive: true });
@@ -99,6 +101,24 @@ export function createGateway(): Gateway {
                             await updateLastSeen(state.uuid);
                         }
                         send(ws, { type: "pong" });
+                        break;
+                    }
+                    case "roles.update": {
+                        const state = connections.get(ws);
+                        if (!state) break;
+
+                        const roles = normalizeRoles((msg as any).roles);
+                        state.roles = roles;
+
+                        // atualiza no Firestore
+                        await firestore()?.collection("users").doc(state.uuid).set(
+                            { roles },
+                            { merge: true }
+                        );
+
+                        // opcional: broadcast para clientes que quiserem reagir
+                        broadcast(wss, { type: "user.roles", uuid: state.uuid, roles });
+
                         break;
                     }
                     default: {
