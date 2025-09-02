@@ -6,7 +6,7 @@ export type ClientToServer =
     | { type: "roles.update"; roles: string[] };
 
 export type ServerToClient =
-    | { type: "auth.ok"; uuid: string }
+    | { type: "auth.ok"; uuid: string; roles: string[] }   // 👈 inclui roles
     | { type: "user.join"; uuid: string; name: string; accountType: AccountType }
     | { type: "user.leave"; uuid: string }
     | { type: "user.roles"; uuid: string; roles: string[] }

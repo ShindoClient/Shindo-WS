@@ -134,7 +134,7 @@ export function createGateway(): Gateway {
 
                         await markOnline(uuid, name, rolesToPersist, accountType);
 
-                        send(ws, { type: "auth.ok", uuid });
+                        send(ws, { type: "auth.ok", uuid, roles: effectiveRoles }); // 👈 manda roles efetivas
                         broadcast(wss, { type: "user.join", uuid, name, accountType });
                     }
                     case "ping": {
