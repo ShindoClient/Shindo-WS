@@ -136,6 +136,7 @@ export function createGateway(): Gateway {
 
                         send(ws, { type: "auth.ok", uuid, roles: effectiveRoles }); // 👈 manda roles efetivas
                         broadcast(wss, { type: "user.join", uuid, name, accountType });
+                        break;
                     }
                     case "ping": {
                         const state = connections.get(ws);
